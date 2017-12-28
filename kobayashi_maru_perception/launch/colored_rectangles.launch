@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+    <!-- Load the URDF into the ROS Parameter Server -->
+    <!-- use this when there's a URDF <param name="robot_description" command="$(find xacro)/xacro.py '$(find kobayashi_maru_description)/urdf/kobayashi_maru.urdf.xacro'" /> -->
+
+    <include file="$(find video_stream_opencv)/launch/camera.launch" />
+
+    <!-- Load joint controller configurations from YAML file to parameter server -->
+    <!-- <rosparam file="$(find kobayashi_maru_perception)/config/hsv_filter.yaml" command="load"/> -->
+
+    <include file="$(find opencv_apps)/launch/hsv_color_filter.launch" />
+</launch>
+
