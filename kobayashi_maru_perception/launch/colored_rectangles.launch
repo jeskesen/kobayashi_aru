@@ -2,12 +2,28 @@
 <launch>
     <!-- Load the URDF into the ROS Parameter Server -->
     <!-- use this when there's a URDF <param name="robot_description" command="$(find xacro)/xacro.py '$(find kobayashi_maru_description)/urdf/kobayashi_maru.urdf.xacro'" /> -->
+    <arg name="visualize" default="true" doc="Specify whether the node displays a window to show image" />
+    <arg name="hue_target" default="50" doc="The target value of Hue" />
+    <arg name="hue_width" default="15" doc="The target width of Hue" />
+    <arg name="saturation_min" default="50" doc="The minimum valid range of Saturation" />
+    <arg name="value_min" default="50" doc="The minimum valid range of Value" />
 
-    <include file="$(find video_stream_opencv)/launch/camera.launch" />
-
+    <include file="$(find video_stream_opencv)/launch/webcam.launch">
+    </include>
     <!-- Load joint controller configurations from YAML file to parameter server -->
     <!-- <rosparam file="$(find kobayashi_maru_perception)/config/hsv_filter.yaml" command="load"/> -->
 
-    <include file="$(find opencv_apps)/launch/hsv_color_filter.launch" />
+    <include file="$(find opencv_apps)/launch/hsv_color_filter.launch" >
+        <arg name="image" value="/webcam/image_raw" />
+        <arg name="debug_view" value="$(arg visualize)" />
+        <arg name="h_limit_max" value="$(eval hue_target + hue_width / 2 )" />
+        <arg name="h_limit_min" value="$(eval hue_target - hue_width / 2 )" />
+    </include>
+
+    <include file="$(find opencv_apps)/launch/general_contours.launch" >
+        <arg name="image" value="/hsv_color_filter/image" />
+        <arg name="debug_view" value="$(arg visualize)" />
+    </include>
+
 </launch>
 
