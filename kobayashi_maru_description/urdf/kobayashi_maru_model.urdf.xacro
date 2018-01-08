@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+	<xacro:include filename="$(find ackermann_vehicle_description)/urdf/em_3905.urdf.xacro" />
+	<xacro:include filename="$(find hector_sensors_description)/urdf/asus_camera.urdf.xacro" />
+
+</robot>
+

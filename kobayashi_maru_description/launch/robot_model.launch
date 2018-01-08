@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="namespace" default="kobayashi_maru"/>
+
+  <group ns="$(arg namespace)">
+    <!-- robot_description is used by nodes that publish to joint_states. -->
+    <param name="robot_description"
+           command="$(find xacro)/xacro $(find kobayashi_maru_description)/urdf/kobayashi_maru_model.urdf.xacro"/>
+
+    <!-- Read joint positions from joint_states, then publish the vehicle's
+         state to tf. -->
+    <node name="vehicle_state_publisher" pkg="robot_state_publisher"
+          type="robot_state_publisher">
+      <param name="publish_frequency" value="30.0"/>
+    </node>
+
+    <!-- Read joint positions from a GUI, then publish them to joint_states. -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher"
+          type="joint_state_publisher">
+      <param name="rate" value="30"/>
+      <param name="use_gui" value="false"/>
+    </node>
+
+  </group>
+</launch>
