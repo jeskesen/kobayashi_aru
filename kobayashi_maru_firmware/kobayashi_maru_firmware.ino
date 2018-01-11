@@ -4,25 +4,30 @@
 #include <ros.h>
 ros::NodeHandle  nh;
 
+#include "FlowOdometry.h"
+FlowOdometry flow(PMW3901_CS);
+
+// ACTUATION
+#include <Servo.h>
+Servo steering_servo, throttle_servo;
+
 #include <std_msgs/UInt16.h>
 std_msgs::UInt16 steering_pwm_msg, throttle_pwm_msg;
 ros::Publisher steering_pwm("steering_pwm", &steering_pwm_msg);
 ros::Publisher throttle_pwm("throttle_pwm", &throttle_pwm_msg);
 
-#include <Servo.h>
-Servo steering_servo, throttle_servo;
 
 #include "RCInput.h"
 RCInput rc;
 
-#include "ros.h"
-
 void setup()
 {
 	nh.initNode();
-  nh.advertise(steering_pwm);
-  nh.advertise(throttle_pwm);
-  
+	nh.advertise(steering_pwm);
+	nh.advertise(throttle_pwm);
+
+	flow.init();
+
 	rc.init(CPPM_PIN);
 
 	throttle_servo.attach(THROTTLE_ESC_PIN, 1000, 2000);
@@ -35,6 +40,8 @@ void setup()
 
 void loop()
 {
+	flow.read_data();
+
 	if (rc.read())
 	{
 		if (rc.isManual())
