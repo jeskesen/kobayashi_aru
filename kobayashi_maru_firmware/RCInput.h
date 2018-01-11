@@ -22,7 +22,7 @@ public:
 		RC_N_CHANNELS
 	};
 	RCInput(){}
-	virtual ~RCInput();
+	virtual ~RCInput(){}
 	void init(uint8_t pin){rcIn.begin(pin);}
 	bool read()
 	{
