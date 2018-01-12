@@ -5,10 +5,8 @@
 ros::NodeHandle nh;
 
 #include "FlowOdometry.h"
-FlowOdometry flow(PMW3901_CS);
-#include <geometry_msgs/Twist.h>
-geometry_msgs::Twist flow_twist_msg;
-ros::Publisher flow_twist("flow_twist", &flow_twist_msg);
+FlowOdometry flow(&nh, "flow", PMW3901_CS);
+
 
 // ACTUATION
 #include <Servo.h>
@@ -22,14 +20,19 @@ ros::Publisher throttle_pwm("throttle_pwm", &throttle_pwm_msg);
 #include "RCInput.h"
 RCInput rc;
 
+#include <list>
+std::list<ROSDriver*> drivers;
 void setup()
 {
   nh.initNode();
+
+  for(auto driver : drivers)
+  {
+    driver->init();
+  }
+
   nh.advertise(steering_pwm);
   nh.advertise(throttle_pwm);
-
-  if(flow.init())
-    nh.advertise(flow_twist);
 
   rc.init(CPPM_PIN);
 
@@ -43,14 +46,10 @@ void setup()
 
 void loop()
 {
-  if (flow.getIsInitialized())
-  {
-    float x_vel, y_vel;
-    flow.read_vel(x_vel, y_vel);
-    flow_twist_msg.linear.x = x_vel;
-    flow_twist_msg.linear.y = y_vel;
-    flow_twist.publish(&flow_twist_msg);
 
+  for(auto driver : drivers)
+  {
+    driver->runOnce();
   }
 
   if (rc.read())
