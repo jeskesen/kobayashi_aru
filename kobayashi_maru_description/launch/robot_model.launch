@@ -1,9 +1,15 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="namespace" default="kobayashi_maru"/>
+  <arg name="steerable_joints" default="[left_steering_joint,right_steering_joint]"/>
 
   <group ns="$(arg namespace)">
     <!-- robot_description is used by nodes that publish to joint_states. -->
+    <rosparam param="wheelbase">0.335</rosparam>
+    <rosparam param="tire_diameter">0.14605</rosparam>
+    <rosparam param="hex_hub_dist">0.365</rosparam>
+    <rosparam param="axel_length">0.03</rosparam>
+    <rosparam param="tire_width">0.0889</rosparam>
     <param name="robot_description"
            command="$(find xacro)/xacro $(find kobayashi_maru_description)/urdf/kobayashi_maru_model.urdf.xacro"/>
 
@@ -18,7 +24,7 @@
     <node name="joint_state_publisher" pkg="joint_state_publisher"
           type="joint_state_publisher">
       <param name="rate" value="30"/>
-      <param name="use_gui" value="false"/>
+      <rosparam param="source_list" subst_value="True">$(arg steerable_joints)</rosparam>
     </node>
 
   </group>
