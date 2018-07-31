@@ -105,7 +105,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+	#  INCLUDE_DIRS include
   LIBRARIES kobayashi_maru_simulation tf tf2 tf2_ros
   CATKIN_DEPENDS kobayashi_maru_description roscpp tf tf2 tf2_ros
 #  DEPENDS system_lib
