@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="namespace" default="kobayashi_maru"/>
-  <arg name="steerable_joints" default="[left_steering_joint,right_steering_joint]"/>
 
-  <group ns="$(arg namespace)">
+    <arg name="steerable_joints" default="[left_steering_joint,right_steering_joint]"/>
+ 
     <!-- robot_description is used by nodes that publish to joint_states. -->
     <rosparam param="wheelbase">0.335</rosparam>
     <rosparam param="tire_diameter">0.14605</rosparam>
@@ -27,5 +26,4 @@
       <rosparam param="source_list" subst_value="True">$(arg steerable_joints)</rosparam>
     </node>
 
-  </group>
 </launch>
