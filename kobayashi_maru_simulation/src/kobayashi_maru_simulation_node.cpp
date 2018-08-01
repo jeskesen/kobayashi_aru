@@ -45,6 +45,12 @@ void kobayahsi_maru_simulation_node::init()
     jointStatesSub = nodeHandle.subscribe("joint_states", 10, &kobayahsi_maru_simulation_node::joint_states_callback, this);
     odomPublisher = nodeHandle.advertise<nav_msgs::Odometry>("odom", 50);
 
+    tf::Transform junk;
+    //junk.setIdentity();
+    //tf::transformTFToMsg(junk, odomTransform.transform);
+    odomTransform.transform.translation.x = 0.0;
+    odomTransform.transform.translation.y = 0.0;
+    odomTransform.transform.translation.z = 0.0;
     odomTransform.header.frame_id = "odom";
     odomTransform.child_frame_id = "base_link";
 
@@ -59,12 +65,11 @@ void kobayahsi_maru_simulation_node::joint_states_callback(
 void kobayahsi_maru_simulation_node::spinOnce()
 {
 
+	/*
     tf::StampedTransform rightWheelTransform, leftWheelTransform;
     try{
-      TFlistener.lookupTransform("right_rear_wheel", "right_front_wheel",
-                               ros::Time(0), rightWheelTransform);
-      TFlistener.lookupTransform("left_rear_wheel", "left_front_wheel",
-                               ros::Time(0), leftWheelTransform);
+      TFlistener.lookupTransform( "/right_front_wheel", "/right_rear_wheel", ros::Time(0), rightWheelTransform);
+      TFlistener.lookupTransform("/left_rear_wheel", "/left_front_wheel", ros::Time(0), leftWheelTransform);
     }
     catch (tf::TransformException ex){
       ROS_ERROR("%s",ex.what());
@@ -74,6 +79,9 @@ void kobayahsi_maru_simulation_node::spinOnce()
     // I'm only going to worry about the right wheel for now.  Eventually, I will incorporate both.
     double rightAngle = rightWheelTransform.getRotation().getZ();
     double rightWheelSpacing = rightWheelTransform.getOrigin().getX();
+	 */
+    double rightAngle = 0; //M_PI/16;
+    double rightWheelSpacing = 0.335;
 
     //compute odometry using the turning radius
     double dt = (currentTime - lastTime).toSec();
