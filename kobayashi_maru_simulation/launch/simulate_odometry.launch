@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+    <include file="$(find kobayashi_maru_description)/launch/robot_model.launch"></include>
+    <node name="simulator" pkg="kobayashi_maru_simulation" type="kobayashi_maru_simulation_node" />
+
+</launch>
+
