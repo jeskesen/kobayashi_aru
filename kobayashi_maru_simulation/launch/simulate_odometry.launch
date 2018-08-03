@@ -2,7 +2,7 @@
 <launch>
 
     <include file="$(find kobayashi_maru_description)/launch/robot_model.launch"></include>
-    <node name="simulator" pkg="kobayashi_maru_simulation" type="kobayashi_maru_simulation_node" />
+    <node name="simulator" pkg="kobayashi_maru_simulation" type="kobayashi_maru_simulation_node" output="screen"/>
 
 </launch>
 
