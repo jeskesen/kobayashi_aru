@@ -14,20 +14,23 @@ private:
     void init();
     void spinOnce();
 
-    void joint_states_callback(const sensor_msgs::JointState& msg);
-    void trans_vel_callback();
+    void rightSteeringCB(const sensor_msgs::JointState& msg);
+    void tireRotationCB(const sensor_msgs::JointState& msg);
 
     double theta; // keep track of theta to save us from having to constantly convert from quaternion.
+    double rightFrontAngle;
+    double tireVel;
     ros::NodeHandle nodeHandle;
-    ros::Subscriber jointStatesSub;
+    ros::Subscriber rightSteeringSub, tireVelSub;
     ros::Publisher odomPublisher;
 
+    geometry_msgs::TransformStamped odomTransform;
+    
     tf::TransformBroadcaster odomTFBroadcaster;
     tf::TransformListener TFlistener;
-    geometry_msgs::TransformStamped odomTransform;
 
     tf::Transform transform;
-
+    
     ros::Time currentTime, lastTime;
     ros::Rate rate;
 };
@@ -36,13 +39,17 @@ kobayahsi_maru_simulation_node::kobayahsi_maru_simulation_node() :
         rate(100)
 {
     theta=0.0;
+    rightFrontAngle=0.0;
+    tireVel=0.0;
+
 }
 
 void kobayahsi_maru_simulation_node::init()
 {
     ///Todo: read in physical characteristics of robot as params.  Hard-coded for now.
 
-    jointStatesSub = nodeHandle.subscribe("joint_states", 10, &kobayahsi_maru_simulation_node::joint_states_callback, this);
+    rightSteeringSub = nodeHandle.subscribe("right_steering_joint", 10, &kobayahsi_maru_simulation_node::rightSteeringCB, this);
+    tireVelSub = nodeHandle.subscribe("tire_rotation", 10, &kobayahsi_maru_simulation_node::tireRotationCB, this);
     odomPublisher = nodeHandle.advertise<nav_msgs::Odometry>("odom", 50);
 
     tf::Transform junk;
@@ -57,15 +64,23 @@ void kobayahsi_maru_simulation_node::init()
     currentTime = lastTime = ros::Time::now();
 }
 
-void kobayahsi_maru_simulation_node::joint_states_callback(
+void kobayahsi_maru_simulation_node::rightSteeringCB(
         const sensor_msgs::JointState& msg)
 {
+	rightFrontAngle = msg.position[0];
 }
+
+void kobayahsi_maru_simulation_node::tireRotationCB(
+        const sensor_msgs::JointState& msg)
+{
+	tireVel = msg.velocity[0];
+}
+
 
 void kobayahsi_maru_simulation_node::spinOnce()
 {
 
-	/*
+   /*  Was having trouble using tf, so tried another way.
     tf::StampedTransform rightWheelTransform, leftWheelTransform;
     try{
       TFlistener.lookupTransform( "/right_front_wheel", "/right_rear_wheel", ros::Time(0), rightWheelTransform);
@@ -75,25 +90,24 @@ void kobayahsi_maru_simulation_node::spinOnce()
       ROS_ERROR("%s",ex.what());
       ros::Duration(1.0).sleep();
     }
+    */
 
     // I'm only going to worry about the right wheel for now.  Eventually, I will incorporate both.
-    double rightAngle = rightWheelTransform.getRotation().getZ();
-    double rightWheelSpacing = rightWheelTransform.getOrigin().getX();
-	 */
-    double rightAngle = 0; //M_PI/16;
     double rightWheelSpacing = 0.335;
+    double tireDiameter = 0.14605;
 
     //compute odometry using the turning radius
     double dt = (currentTime - lastTime).toSec();
-    double vx = 0.1;
+    double vx = tireVel * tireDiameter ;
     double vy = 0.0;
-    double delta_theta = 0.0;
+    double delta_theta = 0; //rightFrontAngle / dt;
     double dist = vx * dt;
 
-    if( rightAngle != 0.0)
+    
+    if( rightFrontAngle != 0.0)
     {
         // calculate turning radius
-        double rightTurningRadius = rightWheelSpacing * sin(rightAngle);
+        double rightTurningRadius = rightWheelSpacing / tan(rightFrontAngle);
         // calclulate circumference of circle that would be swept
         double rightTurningCircumference = 2 * M_PI *rightTurningRadius;
         // what fraction of the above circle will I drive in this dt?
@@ -102,8 +116,8 @@ void kobayahsi_maru_simulation_node::spinOnce()
         double rightTurnAngleSwept = rightFractionOfCircumferenceSwept * (2*M_PI);
         // for now, we'll just consider this the angle we turned.
         delta_theta = rightTurnAngleSwept;
+        //ROS_INFO("turnRadius: [%f]", rightTurningRadius);
     }
-
 
     theta += delta_theta;
     double delta_x = (vx * cos(theta) - vy * sin(theta)) * dt;
@@ -154,10 +168,10 @@ void kobayahsi_maru_simulation_node::spin()
     while (nodeHandle.ok())
     {
 
-        ros::spinOnce(); // check for incoming messages
         currentTime = ros::Time::now();
         spinOnce();
         lastTime = currentTime;
+        ros::spinOnce(); // check for incoming messages
         rate.sleep();
     }
 }
@@ -170,3 +184,4 @@ int main(int argc, char** argv)
     simNode.spin();
     return 0;
 };
+
