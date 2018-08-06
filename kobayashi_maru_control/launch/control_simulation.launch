@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+    <include file="$(find kobayashi_maru_simulation)/launch/simulate_odometry.launch"></include>
+    <node name="control" pkg="kobayashi_maru_control" type="follow_path" output="screen"/>
+
+</launch>
+
