@@ -4,5 +4,9 @@
     <include file="$(find kobayashi_maru_simulation)/launch/simulate_odometry.launch"></include>
     <node name="control" pkg="kobayashi_maru_control" type="follow_path" output="screen"/>
 
+    <include file="$(find ackermann_vehicle_description)/launch/rviz.launch">
+    </include>
+
+
 </launch>
 
