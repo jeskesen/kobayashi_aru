@@ -13,7 +13,7 @@ public:
   void spin();
 protected:
   void init();
-  void spinOnce();
+  void followPath();
   void onNewPathReceived(const nav_msgs::Path::ConstPtr& msg);
   ros::NodeHandle node;
   tf::TransformListener listener;
@@ -32,7 +32,7 @@ protected:
   MiniPID pid;
 
   double captureRadius;
-  double xVel;
+  double speed;
 };
 
 PathFollower::PathFollower() :
@@ -40,8 +40,8 @@ PathFollower::PathFollower() :
     pid(1.0,0.0,0.0) // setting these now because it has no default constructor, set to better values later.
 {
   currentPose=path.poses.end();
-  captureRadius = 1.0;
-  xVel = 1.0;
+  captureRadius = 0.1;
+  speed = 1.0;
 }
 
 void PathFollower::init()
@@ -80,7 +80,7 @@ void PathFollower::spin()
       ros::Duration(1.0).sleep();
     }
 
-    spinOnce();
+    followPath();
 
     tireVelPub.publish(tireVelMsg);
     rightSteeringPub.publish(rightSteeringMsg);
@@ -92,7 +92,7 @@ void PathFollower::spin()
 }
 
 
-void PathFollower::spinOnce()
+void PathFollower::followPath()
 {
 
   // are we done? if so, stop.
@@ -106,30 +106,40 @@ void PathFollower::spinOnce()
 
   // are we at our current goal point?  if so, increment our goal iterator, and recurse.
   tf::Vector3 currentGoalPosition(currentPose->pose.position.x, currentPose->pose.position.y, 0.0);
-  //ROS_INFO("Distance %f", currentGoalPosition.distance(transform.getOrigin()));
-
-  if(currentGoalPosition.distance(transform.getOrigin()) < captureRadius)
+  double distanceToGo = currentGoalPosition.distance(transform.getOrigin());
+  if(distanceToGo < captureRadius)
   {
     currentPose++;
-    return spinOnce();
+    return followPath();
   }
 
-  tireVelMsg.velocity[0]=xVel/ 0.14605;
 
-  tf::Vector3 robotRelativeGoal=transform.invXform(currentGoalPosition);  // transform goal into robot frame
+  // THIS IS WHERE THE CONTROL HAPPENS
+  double currentDesiredXVel = speed;
+
+  tf::Vector3 robotRelativeGoal=transform.invXform(currentGoalPosition);  // transform current goal into robot frame
   double angleToGoal = -atan2(robotRelativeGoal.getY(), robotRelativeGoal.getX());
-  ROS_INFO("Angle %f", angleToGoal);
+  //ROS_INFO("Angle %f", angleToGoal);
+
+  // do a k-turn if goal is behind us.
+  if (fabs(angleToGoal) > angles::from_degrees(90))
+  {
+      currentDesiredXVel *= -1;
+      angleToGoal *= -1;  // ToDo: probably want to do something more clever to clear PID when switching directions.
+  }
 
   double steeringAngle = pid.getOutput(angleToGoal);
   rightSteeringMsg.position[0]=steeringAngle;
   leftSteeringMsg.position[0]=steeringAngle;
+  tireVelMsg.velocity[0]=currentDesiredXVel/ 0.14605;
 
 }
+
+
 
 void PathFollower::onNewPathReceived(const nav_msgs::Path::ConstPtr& msg)
 {
    //ROS_INFO("HERE");
-
   path = *(msg.get());
   currentPose = path.poses.begin();
 
