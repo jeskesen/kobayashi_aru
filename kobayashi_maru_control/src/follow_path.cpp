@@ -2,6 +2,8 @@
 #include <tf/transform_listener.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Path.h>
+#include <MiniPID/MiniPID.h>
+
 class PathFollower
 {
 public:
@@ -26,13 +28,15 @@ protected:
   nav_msgs::Path path;
   /// this holds our progress as we iterate through the path.
   std::vector<geometry_msgs::PoseStamped>::iterator currentPose;
+  MiniPID pid;
 
   double captureRadius;
   double xVel;
 };
 
 PathFollower::PathFollower() :
-    rate(10.0)
+    rate(10.0),
+    pid(1.0,0.0,0.0) // setting these now because it has no default constructor, set to better values later.
 {
   currentPose=path.poses.end();
   captureRadius = 1.0;
@@ -52,6 +56,10 @@ void PathFollower::init()
   leftSteeringMsg.position.push_back(0.0);
   leftSteeringMsg.name.push_back("left_steering_joint");
   tireVelMsg.velocity.push_back(0.0); // so that it's allocated
+
+  pid.setSetpoint(0.0); // dead reckon
+  pid.setOutputLimits(-M_PI/16.0, M_PI/16.0);
+  //pid.setOutputRampRate(0.1);
 }
 
 void PathFollower::spin()
@@ -97,7 +105,7 @@ void PathFollower::spinOnce()
 
   // are we at our current goal point?  if so, increment our goal iterator, and recurse.
   tf::Vector3 currentGoalPosition(currentPose->pose.position.x, currentPose->pose.position.y, 0.0);
-  ROS_INFO("Distance %f", currentGoalPosition.distance(transform.getOrigin()));
+  //ROS_INFO("Distance %f", currentGoalPosition.distance(transform.getOrigin()));
 
   if(currentGoalPosition.distance(transform.getOrigin()) < captureRadius)
   {
@@ -106,15 +114,21 @@ void PathFollower::spinOnce()
   }
 
   tireVelMsg.velocity[0]=xVel/ 0.14605;
-  rightSteeringMsg.position[0]=0.0;
-  leftSteeringMsg.position[0]=0.0;
 
+  tf::Vector3 robotRelativeGoal=transform.invXform(currentGoalPosition);  // transform goal into robot frame
+  double angleToGoal = -atan2(robotRelativeGoal.getY(), robotRelativeGoal.getX());
+  ROS_INFO("Angle %f", angleToGoal);
 
+  double steeringAngle = pid.getOutput(angleToGoal);
+  rightSteeringMsg.position[0]=steeringAngle;
+  leftSteeringMsg.position[0]=steeringAngle;
 
 }
 
 void PathFollower::onNewPathReceived(const nav_msgs::Path::ConstPtr& msg)
 {
+   //ROS_INFO("HERE");
+
   path = *(msg.get());
   currentPose = path.poses.begin();
 
