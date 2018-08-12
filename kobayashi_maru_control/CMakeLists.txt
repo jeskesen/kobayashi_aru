@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   kobayashi_maru_description
   roscpp
   tf
+  angles
 )
 
 ## System dependencies are found with CMake's conventions

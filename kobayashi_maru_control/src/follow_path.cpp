@@ -2,6 +2,7 @@
 #include <tf/transform_listener.h>
 #include <sensor_msgs/JointState.h>
 #include <nav_msgs/Path.h>
+#include <angles/angles.h>
 #include <MiniPID/MiniPID.h>
 
 class PathFollower
@@ -58,7 +59,7 @@ void PathFollower::init()
   tireVelMsg.velocity.push_back(0.0); // so that it's allocated
 
   pid.setSetpoint(0.0); // dead reckon
-  pid.setOutputLimits(-M_PI/16.0, M_PI/16.0);
+  pid.setOutputLimits(angles::from_degrees(-30), angles::from_degrees(30));
   //pid.setOutputRampRate(0.1);
 }
 
